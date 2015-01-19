@@ -1,0 +1,4 @@
+1. header
+2. components
+3. magnitudes
+4. amplification on the surface (correction)
