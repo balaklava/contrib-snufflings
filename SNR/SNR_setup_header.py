@@ -20,7 +20,7 @@ class SNRSetup(Object):
     components = List.T(String.T())
     sampling_rate = Float.T()
     time_window_length = Float.T(default=1.0)
-    taper = Taper.T(default=Taper.D(type="trace.CosTaper",deltat_taper=0.5))
+    taper = Taper.T(default=Taper.D(type="trace.CosTaper",deltat_taper=0.1))
     filter = Filter.T(default=Filter.D(type="obspy.signal.konnoohmachismoothing",bandwidth=40.0))
     
     results_columns = String.T()
