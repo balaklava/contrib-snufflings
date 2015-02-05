@@ -120,8 +120,7 @@ class SNR(Snuffling):
 		if an active event is not marked.
         ''' 
 
-        all_markers = self.get_markers()
-        print "marker length:", len(all_markers) 
+        all_markers = self.get_markers() 
         evm_all = []
         phm_all = []
         for mk in all_markers:
@@ -145,7 +144,6 @@ class SNR(Snuffling):
             tmp_evm, phm = self.get_active_event_and_phase_markers()
             evm = []
             evm.append(tmp_evm)
-        print type(evm), type(phm)
         return evm, phm
 
 
@@ -237,16 +235,10 @@ class SNR(Snuffling):
             list_of_channels = [self.selected_channel]
 
         evm, phm = self.marker_upload()
-        print len(evm), len(phm)
-        for i in range(len(evm)):
-            print i, evm[i].tmin
 
         EventDict = self.event_marker_dict(evm, phm)
-        print EventDict
 
         # iterations over the events#
-        print "Marker list lenght", len(evm), type(evm)
-
         for i in range(len(evm)):
             arr_dict = readMarker(self,EventDict[evm[i]],evm[i])     
             chopper_tmin, chopper_tmax = self.time_range_chopper(evm[i])
@@ -283,7 +275,7 @@ class SNR(Snuffling):
         i_tmin = self.event_with_tmin()
         self.current_stuff = (SNR, freq, std_SNR, sampl_rate, i_tmin)
 
-       # print "The calculations are done, my Dear Snufflinger!"
+        print "The calculations are done, my Dear Snufflinger!"
 
 
     def panel_visibility_changed(self, bool):
@@ -299,11 +291,9 @@ class SNR(Snuffling):
 
 
     def adjust_controls(self):
-        print 'adjusting controls'
         p = self.get_pile()
         stas = sorted(list(p.stations))
         chans = list(p.channels)
-        print stas
         if not stas:
             stas = ['<empty>']
         if not chans:
