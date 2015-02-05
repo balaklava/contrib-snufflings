@@ -96,3 +96,4 @@ setup(name='contrib-snufflings',
       cmdclass={'link': LinkSnufflingFiles,
                 'install': PassSetup}
       )
+

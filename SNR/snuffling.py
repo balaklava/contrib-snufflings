@@ -1,8 +1,5 @@
-
 from pyrocko.snuffling import Snuffling, Choice, Param
 from pyrocko.model import Event
-#from PyQt4.QtCore import *
-#from PyQt4.QtGui import *
 from SNR_snuff import *
 from SNR_setup_header import SNRSetup, Results, load
 import numpy
@@ -50,33 +47,42 @@ class SNR(Snuffling):
         '''
             Creates a GUI menu.
         '''
+
         self.set_name('SNR - signal to noise ratio')
         self.add_parameter(Choice('Select Station (borehole)','selected_sta1', '<empty>', ['<empty>']))
         self.add_parameter(Choice('Select Station (surface)','selected_sta2', '<empty>', ['<empty>']))
         self.add_parameter(Choice('Channels', 'selected_channel', '<empty>', ['<empty>']))
-        self.add_parameter(Choice('Number of Events','selected_marker_type', 'Active Event Markers (one event)', ['Active Event Markers (one event)', 'All Events Markers (several events)']))
+        self.add_parameter(Choice('Number of Events','selected_marker_type', 
+				'Active Event Markers (one event)', 
+				['Active Event Markers (one event)', 
+				'All Events Markers (several events)']))
         self.add_parameter(Param('Time Window [s]', 'window_length', 1., 0.08, 1200.0))    # for a Signal/Noise Selection [s]'
-        self.add_parameter(Choice('Output file header format', 'output_header', 'yaml (full)', ('yaml (full)', 'alternative', 'without header')))
+        self.add_parameter(Choice('Output file header format', 'output_header', 'yaml (full)', 
+				('yaml (full)', 'alternative', 'without header')))
         
         self.add_trigger('Save', self.save)
         self.current_stuff = None
         self.set_live_update(False)
 
 
-
     def save(self):
         '''
             Saves obtatined calculation into a file.
         '''
+
         if not self.current_stuff:
             self.fail('Nothing to save.')
 
         SNR, freq, std_SNR, sampling_rate, i_tmin = self.current_stuff
 
         if self.selected_marker_type == 'All Events Markers (several events)':
-            dir = 'SNR_' + self.selected_sta1 + '_' + self.selected_sta2 + '_'  + 'Nevents'+ str(len(self.eventsMarkers)) + '_' + util.time_to_str(self.eventsMarkers[i_tmin].tmin, format='%Y-%m-%d_%H-%M-%S') + '.dat' 
+            dir = 'SNR_' + self.selected_sta1 + '_' + self.selected_sta2 + \
+		 '_'  + 'Nevents'+ str(len(self.eventsMarkers)) + '_' + \
+		 util.time_to_str(self.eventsMarkers[i_tmin].tmin, format='%Y-%m-%d_%H-%M-%S') + '.dat' 
         else: 
-            dir = 'SNR_' + self.selected_sta1 + '_' + self.selected_sta2 + '_'  + str(self.eventsMarkers[0].get_event().name) + '_' + util.time_to_str(self.eventsMarkers[0].tmin, format='%Y-%m-%d_%H-%M-%S') + '.dat' 
+            dir = 'SNR_' + self.selected_sta1 + '_' + self.selected_sta2 + \
+		 '_'  + str(self.eventsMarkers[0].get_event().name) + '_' + \
+		 util.time_to_str(self.eventsMarkers[0].tmin, format='%Y-%m-%d_%H-%M-%S') + '.dat' 
 
         data_fn = self.output_filename(caption='Save Data', dir = dir)        
         file = open(data_fn, "w")
@@ -92,7 +98,8 @@ class SNR(Snuffling):
             s = results.dump()
             file.write("%s" % s)
         elif self.output_header == 'alternative':
-            file.write("# Signal to Noise Ratio improvment for " + str(self.selected_sta1) + "/" + str(self.selected_sta2) + " stations.\n")
+            file.write("# Signal to Noise Ratio improvment for " + \
+			str(self.selected_sta1) + "/" + str(self.selected_sta2) + " stations.\n")
             file.write("# Station components:       " + str(self.selected_channel) + "\n" )
             file.write("# Station sampling rate:    " + str(sampling_rate) + "\n")
             file.write("# number of events:         " + str(len(self.eventsMarkers)) + "\n")
@@ -107,12 +114,12 @@ class SNR(Snuffling):
         file.close()
 
 
-
-
     def get_all_event_and_phase_markers(self):
         ''' 
-            Gets and separates all event and phase markers, if an active event is not marked.
+            Gets and separates all event and phase markers, 
+		if an active event is not marked.
         ''' 
+
         all_markers = self.get_markers()
         print "marker length:", len(all_markers) 
         evm_all = []
@@ -127,11 +134,11 @@ class SNR(Snuffling):
         return evm_all, phm_all
 
 
-
     def marker_upload(self):
         ''' 
             Gets phase and event markers according to the menu selection.
         '''
+
         if self.selected_marker_type == 'All Events Markers (several events)':
             evm, phm = self.get_all_event_and_phase_markers()
         else:
@@ -142,11 +149,12 @@ class SNR(Snuffling):
         return evm, phm
 
 
-
     def event_marker_dict(self,evm, phm):
         '''
-            Creates a dictionary, where each event marker will be assotiated with six P and S phases.  
+            Creates a dictionary, where each event marker 
+		will be assotiated with six P and S phases.  
         '''
+
         evm = sorted(evm, key=lambda x: x.tmin)
         EventDict = {}
         for i in range(len(evm)):
@@ -158,34 +166,26 @@ class SNR(Snuffling):
                 else:
                     if (evm[i].tmin <= ph.tmin):
                         EventDict[evm[i]].append((ph))
-
-#        for key in EventDict:
-#            if len(EventDict[key]) > 12:
-#                print len(EventDict[key])
-#                error_message = ' Too many phase markers\nfor the selected stations.\nEvent time: ' + util.time_to_str(evm[i].tmin, format='%Y-%m-%d %H:%M:%S.3FRAC')
-#                self.fail(error_message)
-#            if len(EventDict[key]) < 12:
-#                error_message = ' Insufficient number of phase markers\nfor the selected stations.\nEvent time: ' + util.time_to_str(evm[i].tmin, format='%Y-%m-%d %H:%M:%S.3FRAC')
-#                self.fail(error_message)
-
         return EventDict
 
 
     def auto_plotting(self, evm, freq, SNR, std_SNR, sampling_rate):
         
-
         fframe = self.figure_frame()
         fig = fframe.gcf()
         ax = fig.add_subplot(1, 1, 1)
 
-        ax.tick_params(axis='both',which='minor')#, top='off', right='off')
-        #ax.set_xscale('log')
+        ax.tick_params(axis='both',which='minor')
         ax.set_xlim(0,sampling_rate/2)
         
         if self.selected_channel == "*":
-            title = 'Stations: ' + self.selected_sta1 +'/'+ self.selected_sta2 + ';    Number of events: ' + str(len(evm)) + ';  Components: all'
+            title = 'Stations: ' + self.selected_sta1 +'/'+ self.selected_sta2 \
+		 + ';    Number of events: ' + str(len(evm)) + ';  Components: all'
         else:
-            title = 'Stations: ' + self.selected_sta1 +'/'+ self.selected_sta2 + ';    Number of events: ' + str(len(evm)) + ';  Components: ' + self.selected_channel
+            title = 'Stations: ' + self.selected_sta1 +'/'+ self.selected_sta2 \
+		 + ';    Number of events: ' + str(len(evm)) + ';  Components: '\
+		 + self.selected_channel
+
         zero_line = numpy.zeros(len(freq))
         ax.plot(freq, zero_line, ':k')
         ax.plot(freq, SNR, 'b', lw=2)
@@ -198,6 +198,7 @@ class SNR(Snuffling):
         ax.minorticks_on()
 
         fig.canvas.draw()
+
         
     def event_with_tmin(self):
         evm_min_time = 100000000000000000000
@@ -209,18 +210,18 @@ class SNR(Snuffling):
                 i_tmin = i
         return i_tmin
 
+
     def time_range_chopper(self, evm):
         self.window_length
         chopper_tmin = evm.tmin - 0.01
         chopper_tmax = evm.tmin + 180.0
 
         return chopper_tmin, chopper_tmax
-        
 
 
     def call(self):
         '''
-            Starts the calculations by the button "Run" clicking.
+           Starts the calculations by the button "Run" clicking.
         '''
         
         pile = self.get_pile()
@@ -246,20 +247,8 @@ class SNR(Snuffling):
         # iterations over the events#
         print "Marker list lenght", len(evm), type(evm)
 
-
-
         for i in range(len(evm)):
-            arr_dict = readMarker(self,EventDict[evm[i]],evm[i])
-            #print "arrival dict", i, len(EventDict[evm[i]])
-           
-            #for tr_list in pile.chopper(tmin=evm[i].tmin - 5.0,
-            #                            tmax=evm[i].tmin + 180.0,
-            #                            trace_selector=lambda tr:  tr.station in [self.selected_sta1, self.selected_sta2]):
-
-            #for tr_list in pile.chopper(tmin=evm[i].tmin - 5.0,
-            #                            tmax=evm[i].tmin + 180.0,
-            #                            trace_selector=lambda tr:  (tr.station in [self.selected_sta1, self.selected_sta2]) and (tr.channel in list_of_channels)):
-                
+            arr_dict = readMarker(self,EventDict[evm[i]],evm[i])     
             chopper_tmin, chopper_tmax = self.time_range_chopper(evm[i])
 
             for tr_list in pile.chopper(tmin=chopper_tmin,
@@ -268,14 +257,11 @@ class SNR(Snuffling):
 
                 sampling_rate(self,tr_list)
 
-                ######window_length = 1.0 
                 p = wave_data()
                 s = wave_data()
                 WindowTime(evm[i],p, s, tr_list,self.window_length,arr_dict)
-                (SNR_tmp, freq) = ProcessTrace(self,evm[i],p,s,tr_list, self.selected_sta1, self.selected_sta2, list_of_channels)
-
-                #print "******************* snr_tmp[0:3]", SNR_tmp[0:3]
-            #print "******************* snr_tmp[0:3]", SNR_tmp[0:3]
+                (SNR_tmp, freq) = ProcessTrace(self,evm[i],p,s,tr_list, 
+					self.selected_sta1, self.selected_sta2, list_of_channels)
                 
             if i == 0:
                 SNR = numpy.array(SNR_tmp)
@@ -293,14 +279,12 @@ class SNR(Snuffling):
         self.auto_plotting(evm, freq, SNR, std_SNR, sampl_rate)
       
         # save results into a file  
-        
         self.eventsMarkers = evm
         i_tmin = self.event_with_tmin()
         self.current_stuff = (SNR, freq, std_SNR, sampl_rate, i_tmin)
 
-        print "The calculations are done, my Dear Snufflinger!"
+       # print "The calculations are done, my Dear Snufflinger!"
 
-        
 
     def panel_visibility_changed(self, bool):
         if bool:
@@ -310,10 +294,8 @@ class SNR(Snuffling):
             self.disable_pile_changed_notifications()
 
 
-
     def pile_changed(self):
         self.adjust_controls()
-
 
 
     def adjust_controls(self):
@@ -333,8 +315,6 @@ class SNR(Snuffling):
         self.set_parameter_choices('selected_channel', chans)
 
         
-
-
 def __snufflings__():
     return [SNR()]
 
